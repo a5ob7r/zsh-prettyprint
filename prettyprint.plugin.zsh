@@ -7,6 +7,32 @@
 #
 # TODO: Consider empty array and associative array.
 zpp () {
+  local o_color=never
+
+  local -A params
+  # Left
+  params[lc]='\033['
+  # Right
+  params[rc]='m'
+  # Reset
+  params[rs]='0'
+  # Scalar
+  params[sc]='32'
+  # Integer
+  params[in]='32'
+  # Flaot
+  params[fl]='32'
+  # Array
+  params[ar]='32'
+  # Associative array
+  params[as]='32'
+  # Variable name
+  params[na]='35'
+  # Variable value
+  params[va]='0'
+  # Associative array's key
+  params[ke]='36'
+
   while (( $# )); do
     case $1 in
       -h | --help )
@@ -14,24 +40,97 @@ zpp () {
 Descriptions:
   Pretty printer function for shell variables.
 
+  This can get print config for print through zstyle like list-colors for
+  ':completion:*' context. Each parameter's form is '<key>=<value>'. <value> is
+  used to print variables and should be escape sequence parameter.
+
+  zstyle ':function:zpp' list-colors \\
+    'sc=31' \\
+    'va=36' \\
+    ... \\
+    ;
+
+  Avairable parameter keys
+  - lc: Left
+  - rc: Right
+  - rs: Reset
+  - sc: Scalar type variable attributes
+  - in: Integer type variable attributes
+  - fl: Float type variable attributes
+  - ar: Array type variable attributes
+  - as: Associative array type variable attributes
+  - na: Variable name
+  - va: Variable value
+  - ke: Associative array's key
+
 Usage:
-  zpp [options] <variable_name> ...
+  zpp [options]... <variable_name>...
 
 Options:
-  -h, --help    Show this message and return.
-  --version     Show version info and return.
+  --color[=WHEN]  Print variable with color. Valid values for WHEN are
+                  'always', 'auto' or 'never'. 'always' is used if WHEN is
+                  omitted
+  -h, --help      Show this message and return.
+  --version       Show version info and return.
 "
         return 0
         ;;
       --version )
-        echo '0.1.0'
+        echo '0.2.0'
         return 0
+        ;;
+      --color* )
+        case ${1#--color} in
+          '=always' | )
+            o_color=always
+            ;;
+          '=auto' )
+            o_color=auto
+            ;;
+          '=never' )
+            o_color=never
+            ;;
+          * )
+            local left right
+            if [[ -t 2 ]]; then
+              left='033[31m' right='033[0m'
+            fi
+
+            echo "$left$0: Invalid option value - $1$right"
+            return 1
+            ;;
+        esac
+        shift
         ;;
       * )
         break
         ;;
     esac
   done
+
+  # Escape sequences to decolate output.
+  local -A escseqs
+  if [[ $o_color == always || $o_color == auto && -t 1 ]]; then
+    local -a list_colors
+    zstyle -a :function:zpp list-colors list_colors
+
+    for color in $list_colors[@]; do
+      local k=${color%=*} v=${color#*=}
+      params[$k]=$v
+    done
+
+    escseqs[scalar]=$params[lc]$params[sc]$params[rc]
+    escseqs[integer]=$params[lc]$params[in]$params[rc]
+    escseqs[float]=$params[lc]$params[fl]$params[rc]
+    escseqs[array]=$params[lc]$params[ar]$params[rc]
+    escseqs[association]=$params[lc]$params[as]$params[rc]
+    escseqs[name]=$params[lc]$params[na]$params[rc]
+    escseqs[value]=$params[lc]$params[va]$params[rc]
+    escseqs[key]=$params[lc]$params[ke]$params[rc]
+    escseqs[reset]=$params[lc]$params[rs]$params[rc]
+  fi
+
+  # main
 
   while (( $# )); do
     if [[ ${(P)+${1}} != 1 ]]; then
@@ -50,17 +149,23 @@ Options:
     local attrs=${(Pt)1}
 
     case $attrs in
-      scalar* | integer* | float* )
-        printf '%s %s=%b\n' $attrs $1 ${(PV)1}
+      scalar* )
+        printf "$escseqs[scalar]%s$escseqs[reset] $escseqs[name]%s$escseqs[reset]=$escseqs[value]%b$escseqs[reset]\n" $attrs $1 ${(PV)1}
+        ;;
+      integer* )
+        printf "$escseqs[integer]%s$escseqs[reset] $escseqs[name]%s$escseqs[reset]=$escseqs[value]%b$escseqs[reset]\n" $attrs $1 ${(PV)1}
+        ;;
+      float* )
+        printf "$escseqs[float]%s$escseqs[reset] $escseqs[name]%s$escseqs[reset]=$escseqs[value]%b$escseqs[reset]\n" $attrs $1 ${(PV)1}
         ;;
       array* )
-        printf '%s %s=(\n' $attrs $1
-        printf '  %b\n' "${(@PV)1}"
+        printf "$escseqs[array]%s$escseqs[reset] $escseqs[name]%s$escseqs[reset]=(\n" $attrs $1
+        printf "  $escseqs[value]%b$escseqs[reset]\n" "${(@PV)1}"
         printf ')\n'
         ;;
       association* )
-        printf '%s %s=(\n' $attrs $1
-        printf '  [%b]=%b\n' "${(@PVkv)1}"
+        printf "$escseqs[association]%s$escseqs[reset] $escseqs[name]%s$escseqs[reset]=(\n" $attrs $1
+        printf "  [$escseqs[key]%b$escseqs[reset]]=$escseqs[value]%b$escseqs[reset]\n" "${(@PVkv)1}"
         printf ')\n'
         ;;
       * )
