@@ -1,24 +1,51 @@
 # Pretty printer for Zsh variables
 
+![screenshot01](./screenshot01.png)
+
+## Overview
+
+```zsh
+$ zpp --help
+Descriptions:
+  Pretty printer function for shell variables.
+
+  This can get print config for print through zstyle like list-colors for
+  ':completion:*' context. Each parameter's form is '<key>=<value>'. <value> is
+  used to print variables and should be escape sequence parameter.
+
+  zstyle ':function:zpp' list-colors \
+    'sc=31' \
+    'va=36' \
+    ... \
+    ;
+
+  Avairable parameter keys
+  - lc: Left
+  - rc: Right
+  - rs: Reset
+  - sc: Scalar type variable attributes
+  - in: Integer type variable attributes
+  - fl: Float type variable attributes
+  - ar: Array type variable attributes
+  - as: Associative array type variable attributes
+  - na: Variable name
+  - va: Variable value
+  - ke: Associative array's key
+
+Usage:
+  zpp [options]... <variable_name>...
+
+Options:
+  --color[=WHEN]  Print variable with color. Valid values for WHEN are
+                  'always', 'auto' or 'never'. 'always' is used if WHEN is
+                  omitted
+  -h, --help      Show this message and return.
+  --version       Show version info and return.
+
+```
+
 ## Usage
 
 ```zsh
-$ zpp SHELL path
-scalar-export SHELL=/usr/bin/zsh
-array-tied-special path=(
-  /home/a5ob7r/.zinit/polaris/bin
-  /home/a5ob7r/bin
-  /home/a5ob7r/.cabal/bin
-  /home/a5ob7r/.ghcup/bin
-  /home/a5ob7r/.cargo/bin
-  /home/a5ob7r/.local/bin
-  /home/a5ob7r/.node_modules/bin
-  /usr/local/sbin
-  /usr/local/bin
-  /usr/bin
-  /usr/lib/jvm/default/bin
-  /usr/bin/site_perl
-  /usr/bin/vendor_perl
-  /usr/bin/core_perl
-)
+$ zpp SHELL EDITOR path
 ```
