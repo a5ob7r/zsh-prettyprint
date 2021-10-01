@@ -8,6 +8,32 @@
 # TODO: Consider empty array and associative array.
 zpp () {
   while (( $# )); do
+    case $1 in
+      -h | --help )
+        echo -n "\
+Descriptions:
+  Pretty printer function for shell variables.
+
+Usage:
+  zpp [options] <variable_name> ...
+
+Options:
+  -h, --help    Show this message and return.
+  --version     Show version info and return.
+"
+        return 0
+        ;;
+      --version )
+        echo '0.1.0'
+        return 0
+        ;;
+      * )
+        break
+        ;;
+    esac
+  done
+
+  while (( $# )); do
     if [[ ${(P)+${1}} != 1 ]]; then
       local left right
 
