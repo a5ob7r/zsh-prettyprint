@@ -37,6 +37,16 @@ zpp () {
         printf '  [%b]=%b\n' "${(@PVkv)1}"
         printf ')\n'
         ;;
+      * )
+        # NOTE: This is guard pattern, but should not reach here.
+        local left right
+
+        if [[ -t 2 ]]; then
+          left='\033[31m' right='\033[m'
+        fi
+
+        echo "$left$0: Unknown parameter attributes - $attrs for $1$right" >&2
+        ;;
     esac
 
     shift
